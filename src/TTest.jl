@@ -74,7 +74,7 @@ To perform such a test, give dataset1 .- dataset2 as the observations, and
 set the keyword argument `paired` to true to reflect this in the printing.
 """
 function ttest(obs::Vector{<:Real}, op::Function, H0_value::Real = 0; paired=false, level=0.95)
-    H0 = NullHypothesis(:μ₀, ==, H0_value)
+    H0 = NullHypothesis(:μ₀, op, H0_value)
     ttype = TTest(OneSample(paired))
     ss = SummaryStats(obs)
     return HypothesisTest(H0, ttype, ss)
@@ -96,7 +96,7 @@ The keyword argument `equalvariance::Bool` determines if equal variance
 between the underlying distributions should be assumed.
 """
 function ttest(obs1::Vector{<:Real}, obs2::Vector{<:Real}, op::Function, H0_value::Real = 0; equalvariance::Bool, level=0.95)
-    H0 = NullHypothesis(:μ₀, ==, H0_value)
+    H0 = NullHypothesis(:μ₀, op, H0_value)
     ttype = ismissing(var) ? TTest(OneSample(false)) : TTest(OneSample(false))
     return HypothesisTest(H0, ttype, ss)
 end
