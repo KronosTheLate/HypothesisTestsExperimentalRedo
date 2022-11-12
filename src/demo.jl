@@ -1,18 +1,20 @@
 ################?   DEMO, copy this into a mock-about script   ########################?
+
+using Pkg; pkg"add https://github.com/KronosTheLate/HypothesisTestsExperimentalRedo"
 using HypothesisTestsExperimentalRedo
 obs = rand(100) .+ 1
 
 ttest(obs)
 ttest(obs, 1.57)
-ttest(obs, 1.57)
-ttest(obs, <, 1.57)
+ttest(obs, >, 1.57)
+ht = ttest(obs, <, 1.57)
+show(ht, verbose=true)
 
+confint(ht)
+point_est(ht)
+pval(ht)
 
-
-confint(ttest(obs))
-point_est(ttest(obs))
-pval(ttest(obs))
-
+##
 using GLMakie; Makie.inline!(true)
 let ht = hypottest
     acceptance_region_limits = confint(ht.H0, dist_under_H0(ht), level=ht.level)
