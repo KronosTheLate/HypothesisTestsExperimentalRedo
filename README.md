@@ -26,13 +26,14 @@ julia> using HypothesisTestsExperimentalRedo
 julia> obs = rand(100) .+ 1;
 
 julia> ttest(obs)
+ttest(obs, 1.57)
 One-sample T-test
 =================
 Results:
 ---------
         Parameter of interest: Mean μ₀
-               Point estimate: μ₀ = 1.4897
-    0.95% confidence interval: μ₀ ∈ (1.433, 1.5464)
+               Point estimate: μ₀ = 1.5449
+    0.95% confidence interval: μ₀ ∈ (1.4893, 1.6006)
            Null hypothesis H₀: μ₀ = 0
                       P-value: 0.0
 Outcome with 0.95% confidence: Reject H₀
@@ -46,11 +47,11 @@ One-sample T-test
 Results:
 ---------
         Parameter of interest: Mean μ₀
-               Point estimate: μ₀ = 1.4897
-    0.95% confidence interval: μ₀ ∈ (1.433, 1.5464)
+               Point estimate: μ₀ = 1.5449
+    0.95% confidence interval: μ₀ ∈ (1.4893, 1.6006)
            Null hypothesis H₀: μ₀ = 1.57
-                      P-value: 0.0059614
-Outcome with 0.95% confidence: Reject H₀
+                      P-value: 0.37396
+Outcome with 0.95% confidence: Do not reject H₀
 
 
 
@@ -61,11 +62,11 @@ One-sample T-test
 Results:
 ---------
         Parameter of interest: Mean μ₀
-               Point estimate: μ₀ = 1.4897
-    0.95% confidence interval: μ₀ ∈ (1.4422, Inf)
+               Point estimate: μ₀ = 1.5449
+    0.95% confidence interval: μ₀ ∈ (1.4984, Inf)
            Null hypothesis H₀: μ₀ > 1.57
-                      P-value: 0.0029807
-Outcome with 0.95% confidence: Reject H₀
+                      P-value: 0.18698
+Outcome with 0.95% confidence: Do not reject H₀
 
 
 
@@ -76,10 +77,10 @@ One-sample T-test
 Results:
 ---------
         Parameter of interest: Mean μ₀
-               Point estimate: μ₀ = 1.4897
-    0.95% confidence interval: μ₀ ∈ (-Inf, 1.5371)
+               Point estimate: μ₀ = 1.5449
+    0.95% confidence interval: μ₀ ∈ (-Inf, 1.5915)
            Null hypothesis H₀: μ₀ < 1.57
-                      P-value: 0.99702
+                      P-value: 0.81302
 Outcome with 0.95% confidence: Do not reject H₀
 
 
@@ -91,10 +92,10 @@ One-sample T-test
 Results:
 ---------
         Parameter of interest: Mean μ₀
-               Point estimate: μ₀ = 1.48967548990093
-    0.95% confidence interval: μ₀ ∈ (-Inf, 1.53712856768824)
+               Point estimate: μ₀ = 1.54494649549398
+    0.95% confidence interval: μ₀ ∈ (-Inf, 1.59152326204613)
            Null hypothesis H₀: μ₀ < 1.57
-                      P-value: 0.997019289738684
+                      P-value: 0.813020449049503
 Outcome with 0.95% confidence: Do not reject H₀
 
 
@@ -102,16 +103,45 @@ Details:
 --------
   Number of observations: 100
       Degrees of freedom: 99
-          Test statistic: -2.8105680895492147
-Empirical standard error: 0.02857945708475962
+          Test statistic: -0.89311947540293
+Empirical standard error: 0.028051683112960996
   
 
 julia> confint(ht)
-(-Inf, 1.5371285676882354)
+(-Inf, 1.5915232620461348)
 
 julia> point_est(ht)
-1.4896754899009335
+1.544946495493983
 
 julia> pval(ht)
-0.9970192897386843
+0.8130204490495032
 ```
+
+As for the plotting mentioned, the block below provides a first look at something to the effect I imagine:
+```
+julia> using GLMakie
+
+julia> let ht = ttest(obs, 1.57)
+           acceptance_region_limits = confint(ht.H0, dist_under_H0(ht), level=ht.level)
+           global fig = Figure()
+           ax = Axis(fig[1, 1], xlabel="Value", ylabel="Probability density", title="""Visualized $(HypothesisTestsExperimentalRedo.testname(ht))\nOutcome: $(reject_H0(ht) ? "Reject H₀" : "Do not reject H₀" )""")
+           colors = Makie.current_default_theme().palette.color.val
+           lines!(ax, dist_under_H0(ht), label="Dist under H₀")
+           lines!(ax, dist_apparent(ht), label="Dist apparent")
+           vlines!(ax, [ht.H0.value], color=Cycled(1), linestyle=:dash, label="Value of $(ht.H0.POI) under H₀")
+           vlines!(ax, [point_est(ht)], color=Cycled(2), linestyle=:dash, label="Point estimate")
+           autolimits!(ax)  # needed to set the plot limits by content
+           actual_xaxis_limit = (ax.finallimits.val.origin[1], ax.finallimits.val.origin[1]+ax.finallimits.val.widths[1])
+           
+           function adjust_inf_limits(input_xlims::Tuple{Float64, Float64})
+               output_xlim_lower = input_xlims[1]<actual_xaxis_limit[1] ? actual_xaxis_limit[1] : input_xlims[1]
+               output_xlim_upper = input_xlims[2]>actual_xaxis_limit[2] ? actual_xaxis_limit[2] : input_xlims[2]
+               return (output_xlim_lower, output_xlim_upper)
+           end
+           vspan!(ax, adjust_inf_limits(acceptance_region_limits)..., color=(colors[1], 0.15), label="$(ht.level*100)% acceptance region")
+           vspan!(ax, adjust_inf_limits(confint(ht))..., color=(colors[2], 0.15), label="$(ht.level*100)% conf int")
+           Legend(fig[1, 2], ax)
+           current_figure()|>display
+       end
+```
+Which produces the following image:
