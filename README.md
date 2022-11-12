@@ -145,3 +145,4 @@ julia> let ht = ttest(obs, 1.57)
        end
 ```
 Which produces the following image:
+![Image text](HypothesisTestsExperimentalRedo.png?raw=true)
