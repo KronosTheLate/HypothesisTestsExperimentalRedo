@@ -17,3 +17,101 @@ testing easier to understand. See the example in "demo.jl" for a first draft of 
 plotting made possible by re-using the flexible internal API.
 
 There is no desire for competing HypothesisTests packages. The hope is that whatever value is in this project could be ported to HypothesisTesting.jl.
+
+Below is the output from running the contents of "src/demo.jl" (expect for the plot)
+
+```
+julia> using HypothesisTestsExperimentalRedo
+
+julia> obs = rand(100) .+ 1;
+
+julia> ttest(obs)
+One-sample T-test
+=================
+Results:
+---------
+        Parameter of interest: Mean μ₀
+               Point estimate: μ₀ = 1.4897
+    0.95% confidence interval: μ₀ ∈ (1.433, 1.5464)
+           Null hypothesis H₀: μ₀ = 0
+                      P-value: 0.0
+Outcome with 0.95% confidence: Reject H₀
+
+
+
+
+julia> ttest(obs, 1.57)
+One-sample T-test
+=================
+Results:
+---------
+        Parameter of interest: Mean μ₀
+               Point estimate: μ₀ = 1.4897
+    0.95% confidence interval: μ₀ ∈ (1.433, 1.5464)
+           Null hypothesis H₀: μ₀ = 1.57
+                      P-value: 0.0059614
+Outcome with 0.95% confidence: Reject H₀
+
+
+
+
+julia> ttest(obs, >, 1.57)
+One-sample T-test
+=================
+Results:
+---------
+        Parameter of interest: Mean μ₀
+               Point estimate: μ₀ = 1.4897
+    0.95% confidence interval: μ₀ ∈ (1.4422, Inf)
+           Null hypothesis H₀: μ₀ > 1.57
+                      P-value: 0.0029807
+Outcome with 0.95% confidence: Reject H₀
+
+
+
+
+julia> ht = ttest(obs, <, 1.57)
+One-sample T-test
+=================
+Results:
+---------
+        Parameter of interest: Mean μ₀
+               Point estimate: μ₀ = 1.4897
+    0.95% confidence interval: μ₀ ∈ (-Inf, 1.5371)
+           Null hypothesis H₀: μ₀ < 1.57
+                      P-value: 0.99702
+Outcome with 0.95% confidence: Do not reject H₀
+
+
+
+
+julia> show(ht, verbose=true)
+One-sample T-test
+=================
+Results:
+---------
+        Parameter of interest: Mean μ₀
+               Point estimate: μ₀ = 1.48967548990093
+    0.95% confidence interval: μ₀ ∈ (-Inf, 1.53712856768824)
+           Null hypothesis H₀: μ₀ < 1.57
+                      P-value: 0.997019289738684
+Outcome with 0.95% confidence: Do not reject H₀
+
+
+Details:
+--------
+  Number of observations: 100
+      Degrees of freedom: 99
+          Test statistic: -2.8105680895492147
+Empirical standard error: 0.02857945708475962
+  
+
+julia> confint(ht)
+(-Inf, 1.5371285676882354)
+
+julia> point_est(ht)
+1.4896754899009335
+
+julia> pval(ht)
+0.9970192897386843
+```
