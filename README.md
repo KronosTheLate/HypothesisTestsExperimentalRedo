@@ -10,7 +10,7 @@
 # Why does this repository exsist
 This is an experimental attempt to redo hypothesis-testing in Julia. The main motivation is to have the null-hypothesis included in the test (as opposed to only having two-sided tests, and having to explicitly call pval and confint with certain argument for onesided or non-95% tests). The way it is implemented in this package, the user never has to think about what "left" and "right" mean for confint and pval, but use inequality operators (<, >, ≥, ≤) directly.
 
-Other features includes easy computation of the distribution under the null hypothesis, the distribution indicated by the data, no internal use of test-statistics, and a very modular internal API that I believe could help reduce internal boilerplate. I am not sure if this is fixing a non-existing problem, but it could be neat in any case.
+Other features includes easy computation of the distribution under the null hypothesis, the distribution indicated by the data, no internal use of test-statistics, and a very modular internal API that I believe could help reduce internal boilerplate. I am not sure if this is fixing a non-existing problem, but it could be neat in any case. The tests are also displayed with rounding to reduce visual noise, and you can use `show` with a keyword `verbose=true` to show details that are often uninteresting, and full precision.
 
 There is also a plan to make everything plottable, to make the concepts of hypothesis 
 testing easier to understand. See the example in "demo.jl" for a first draft of the 
