@@ -14,8 +14,10 @@ For a TwoSample test, the boolean argument specifies if equal variance should be
 """
 mutable struct ZTest{T} <: TestType #! Add type constraint on T?
     testtype::T
+    std::Vector{<:Real}
 end
-ZTest(testvariant::Union{OneSample, TwoSample}) = ZTest{typeof(testvariant)}(testvariant)
+ZTest(testvariant::Union{OneSample, TwoSample}, std::Vector{<:Real}) = ZTest{typeof(testvariant)}(testvariant, std)
+ZTest(testvariant::Union{OneSample, TwoSample}, std::Real) = ZTest(testvariant, [std])
 parameter_of_interest(x::ZTest) = "Mean"
 
 checktest(ht::HypothesisTest{ZTest{OneSample}}) = length(ht.data) == 1  ? ht : error("Tried to construct a OneSample Z-test, which requires 1 dataset. $(length(ht.data)) dataset(s) were given")
@@ -35,10 +37,10 @@ stderror(ht::HypothesisTest{ZTest{TwoSample}}) = hypot(stderror(ht.data[1]), std
 
 #* ToDo - add "Assumptions or notes" column from wikipedia
 
-function dist_under_H0(H0::NullHypothesis, ::ZTest{OneSample}, data::Vector{SummaryStats})
+function dist_under_H0(H0::NullHypothesis, testvariant::ZTest{OneSample}, data::Vector{SummaryStats})
     ss = data|>only
     dist_normalized = Normal()
-    return dist_normalized * stderror(ss) + H0.value
+    return dist_normalized * testvariant.std/√ss.n + H0.value
 end
 
 #TODO T -> Z completed up until here. The following is invalid for ZTest, but taken from TTest and used as a template.
