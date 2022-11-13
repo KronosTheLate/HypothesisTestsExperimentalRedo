@@ -1,42 +1,47 @@
 """
-    TTest(OneSample(false))
-    TTest(OneSample(true))
-    TTest(TwoSample(false))
-    TTest(TwoSample(true))
+    ZTest(OneSample(false))
+    ZTest(OneSample(true))
+    ZTest(TwoSample(false))
+    ZTest(TwoSample(true))
 
-A struct used to specify that a T-test should be performed.
-There are 2 types of T-test:
+A struct used to specify that a Z-test should be performed.
+There are 2 types of Z-test:
 OneSample - for testing a hypothesis regarding the mean of a single dataset
 TwoSample - for testing a hypothesis regarding the mean difference of two datasets
 
 For a OneSample test, the boolean argument specifies if the test is paired.
 For a TwoSample test, the boolean argument specifies if equal variance should be assumed.
 """
-mutable struct TTest{T} <: TestType #! Add type constraint on T?
+mutable struct ZTest{T} <: TestType #! Add type constraint on T?
     testtype::T
 end
-TTest(testvariant::Union{OneSample, TwoSample}) = TTest{typeof(testvariant)}(testvariant)
-parameter_of_interest(x::TTest) = "Mean"
+ZTest(testvariant::Union{OneSample, TwoSample}) = ZTest{typeof(testvariant)}(testvariant)
+parameter_of_interest(x::ZTest) = "Mean"
 
-checktest(ht::HypothesisTest{TTest{OneSample}}) = length(ht.data) == 1  ? ht : error("Tried to construct a OneSample T-test, which requires 1 SummaryStats. $(length(ht.data)) SummaryStats were given")
-checktest(ht::HypothesisTest{TTest{TwoSample}}) = length(ht.data) == 2  ? ht : error("Tried to construct a TwoSample T-test, which requires 2 SummaryStats. $(length(ht.data)) SummaryStats were given")
+checktest(ht::HypothesisTest{ZTest{OneSample}}) = length(ht.data) == 1  ? ht : error("Tried to construct a OneSample Z-test, which requires 1 dataset. $(length(ht.data)) dataset(s) were given")
+checktest(ht::HypothesisTest{ZTest{TwoSample}}) = length(ht.data) == 2  ? ht : error("Tried to construct a TwoSample Z-test, which requires 2 datasets. $(length(ht.data)) dataset(s) were given")
 
-testname(test::TTest{OneSample}) = test.testtype.paired ? "Paired T-test" : "One-sample T-test"
-testname(test::TTest{TwoSample}) = test.testtype.equalvariance ? "Two sample T-test assuming equal variance" : "Two sample T-test not assuming equal variance"
-testname(ht::HypothesisTest{<:TTest}) = testname(ht.testtype)
+testname(test::ZTest{OneSample}) = test.testtype.paired ? "Paired Z-test" : "One-sample Z-test"
+#TODO Does the following line make sense?
+testname(test::ZTest{TwoSample}) = test.testtype.equalvariance ? "Two sample Z-test assuming equal variance" : "Two sample Z-test not assuming equal variance"
 
-test_statistic(ht::HypothesisTest{<:TTest}) = (point_est(ht)-ht.H0.value)/stderror(only(ht.data))
+point_est(::TTest{OneSample}, data::Vector{SummaryStats}) = data[1].mean
+point_est(::TTest{TwoSample}, data::Vector{SummaryStats}) = data[1].mean - data[2].mean
 
-stderror(ht::HypothesisTest{TTest{OneSample}}) = stderror(only(ht.data))
-stderror(ht::HypothesisTest{TTest{TwoSample}}) = hypot(stderror(ht.data[1]), stderror(ht.data[2]))
+test_statistic(ht::HypothesisTest{<:ZTest}) = (point_est(ht)-ht.H0.value)/stderror(only(ht.data))
+
+stderror(ht::HypothesisTest{ZTest{OneSample}}) = stderror(only(ht.data))
+stderror(ht::HypothesisTest{ZTest{TwoSample}}) = hypot(stderror(ht.data[1]), stderror(ht.data[2]))
 
 #* ToDo - add "Assumptions or notes" column from wikipedia
 
-function dist_under_H0(H0::NullHypothesis, ::TTest{OneSample}, data::Vector{SummaryStats})
+function dist_under_H0(H0::NullHypothesis, ::ZTest{OneSample}, data::Vector{SummaryStats})
     ss = data|>only
-    dist_normalized = TDist(dof(data))
+    dist_normalized = Normal()
     return dist_normalized * stderror(ss) + H0.value
 end
+
+#TODO T -> Z completed up until here. The following is invalid for ZTest, but taken from TTest and used as a template.
 
 function dist_under_H0(H0::NullHypothesis, testtype::TTest{TwoSample}, data::Vector{SummaryStats})
     ss1, ss2 = data
@@ -54,8 +59,6 @@ end
 dist_apparent(ht::HypothesisTest{<:TTest}) = dist_under_H0(ht) - ht.H0.value + point_est(ht)
 
 
-point_est(::TTest{OneSample}, data::Vector{SummaryStats}) = data[1].mean
-point_est(::TTest{TwoSample}, data::Vector{SummaryStats}) = data[1].mean - data[2].mean
 
 #! Add convenience constructors meant for the public here
 """
